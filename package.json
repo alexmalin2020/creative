@@ -10,12 +10,12 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/vercel": "^7.8.1",
-    "@libsql/client": "^0.14.0",
-    "astro": "^4.16.18"
+    "@astrojs/vercel": "^8.1.0",
+    "@libsql/client": "^0.15.0",
+    "astro": "^5.1.4"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
+    "@astrojs/check": "^0.10.0",
     "typescript": "^5.7.2"
   }
 }
