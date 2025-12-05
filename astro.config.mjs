@@ -4,5 +4,8 @@ import vercel from '@astrojs/vercel';
 export default defineConfig({
   output: 'server',
   adapter: vercel(),
-  site: 'https://creativestuff.vercel.app'
+  site: 'https://creativestuff.vercel.app',
+  security: {
+    checkOrigin: false
+  }
 });
