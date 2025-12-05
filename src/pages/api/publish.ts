@@ -67,7 +67,7 @@ export const POST: APIRoute = async () => {
         optimized_title: optimized.title,
         optimized_description: optimized.description,
         url: product.url,
-        images: localImages
+        images: githubImages
       }
     }), {
       status: 200,
