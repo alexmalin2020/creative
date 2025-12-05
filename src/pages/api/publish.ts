@@ -2,7 +2,6 @@ import type { APIRoute } from 'astro';
 import { getRandomProduct, getProductFolderName } from '../../lib/csv';
 import { optimizeSEO } from '../../lib/deepseek';
 import { insertProduct, getProductByUrl } from '../../lib/db';
-import { join } from 'path';
 
 export const GET: APIRoute = async () => {
   return new Response(JSON.stringify({ message: 'Use POST to publish a product' }), {
@@ -13,9 +12,8 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async () => {
   try {
-    // Get random product from CSV
-    const csvPath = join(process.cwd(), 'data.csv');
-    const product = getRandomProduct(csvPath);
+    // Get random product from CSV (GitHub)
+    const product = await getRandomProduct();
 
     if (!product) {
       return new Response(JSON.stringify({ error: 'No products available in CSV' }), {

@@ -1,5 +1,3 @@
-import { readFileSync, writeFileSync } from 'fs';
-
 export interface CSVProduct {
   searchKey: string;
   url: string;
@@ -30,9 +28,17 @@ export function parseCSVLine(line: string): CSVProduct | null {
   };
 }
 
-export function getRandomProduct(csvPath: string): CSVProduct | null {
+export async function getRandomProduct(): Promise<CSVProduct | null> {
   try {
-    const content = readFileSync(csvPath, 'utf-8');
+    // Read CSV from GitHub
+    const csvUrl = 'https://raw.githubusercontent.com/alexmalin2020/creative/main/data.csv';
+    const response = await fetch(csvUrl);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch CSV from GitHub');
+    }
+
+    const content = await response.text();
     const lines = content.split('\n').filter(line => line.trim());
 
     if (lines.length === 0) {
@@ -41,12 +47,6 @@ export function getRandomProduct(csvPath: string): CSVProduct | null {
 
     const randomIndex = Math.floor(Math.random() * lines.length);
     const product = parseCSVLine(lines[randomIndex]);
-
-    // Remove the selected line from CSV
-    if (product) {
-      lines.splice(randomIndex, 1);
-      writeFileSync(csvPath, lines.join('\n'));
-    }
 
     return product;
   } catch (error) {
