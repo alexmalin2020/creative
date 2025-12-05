@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "astro",
+  "env": {
+    "TURSO_DATABASE_URL": "@turso_database_url",
+    "TURSO_AUTH_TOKEN": "@turso_auth_token",
+    "DEEPSEEK_API_KEY": "@deepseek_api_key",
+    "REFERRAL_TAG": "/ref/16577150/?sharedfrom=pdp"
+  }
+}

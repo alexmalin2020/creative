@@ -1,0 +1,107 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getAllProducts } from '../lib/db';
+
+export const prerender = false;
+
+let products = [];
+let error = null;
+
+try {
+  products = await getAllProducts();
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Failed to load products';
+  console.error('Error loading products:', e);
+}
+
+const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || '/ref/16577150/?sharedfrom=pdp';
+---
+
+<Layout title="Free Modern Creative Stuff - Fonts, Graphics & Design">
+  <div class="container">
+    <div class="search-filter">
+      <input
+        type="text"
+        id="searchInput"
+        class="search-input"
+        placeholder="Search for fonts, graphics, and designs..."
+      />
+    </div>
+
+    {error && (
+      <div style="background: #fee; padding: 20px; border-radius: 8px; color: #c00; margin-bottom: 20px;">
+        Error: {error}
+      </div>
+    )}
+
+    {products.length === 0 && !error && (
+      <div style="background: white; padding: 40px; border-radius: 12px; text-align: center;">
+        <h2 style="margin-bottom: 16px;">No products available yet</h2>
+        <p style="color: #666;">Check back soon for amazing free creative resources!</p>
+      </div>
+    )}
+
+    <div class="product-grid" id="productGrid">
+      {products.map((product) => {
+        const images = product.images ? product.images.split(',') : [];
+        const firstImage = images[0] || 'https://via.placeholder.com/300x200?text=No+Image';
+        const tags = product.tags ? product.tags.split('|').slice(0, 3) : [];
+        const displayTitle = product.optimized_title || product.title;
+        const displayDescription = product.optimized_description || product.description;
+
+        return (
+          <div class="product-card" data-search={`${displayTitle} ${tags.join(' ')}`}>
+            <img src={firstImage} alt={displayTitle} class="product-image" />
+            <div class="product-content">
+              <h2 class="product-title">{displayTitle}</h2>
+              <div class="product-description" set:html={displayDescription.substring(0, 150) + '...'} />
+              <div class="product-tags">
+                {tags.map(tag => {
+                  const [tagName] = tag.split('|');
+                  return <span class="tag">{tagName}</span>;
+                })}
+              </div>
+              <button
+                class="btn get-free-btn"
+                data-url={product.url}
+                data-referral={referralTag}
+              >
+                Get it for free
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+
+  <script>
+    // Search functionality
+    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+    const productCards = document.querySelectorAll('.product-card');
+
+    searchInput?.addEventListener('input', (e) => {
+      const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+
+      productCards.forEach((card) => {
+        const searchData = card.getAttribute('data-search')?.toLowerCase() || '';
+        const matches = searchData.includes(searchTerm);
+        (card as HTMLElement).style.display = matches ? '' : 'none';
+      });
+    });
+
+    // Get it for free button functionality
+    document.querySelectorAll('.get-free-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const button = e.target as HTMLButtonElement;
+        const url = button.getAttribute('data-url');
+        const referral = button.getAttribute('data-referral');
+
+        if (url && referral) {
+          const fullUrl = url + referral;
+          window.open(fullUrl, '_blank');
+        }
+      });
+    });
+  </script>
+</Layout>
