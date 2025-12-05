@@ -4,6 +4,13 @@ import { optimizeSEO } from '../../lib/deepseek';
 import { insertProduct, getProductByUrl } from '../../lib/db';
 import { join } from 'path';
 
+export const GET: APIRoute = async () => {
+  return new Response(JSON.stringify({ message: 'Use POST to publish a product' }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+};
+
 export const POST: APIRoute = async () => {
   try {
     // Get random product from CSV
