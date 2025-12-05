@@ -1,0 +1,124 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getAllProducts, type Product } from '../../lib/db';
+
+export async function getStaticPaths() {
+  const products = await getAllProducts();
+
+  return products.map((product) => {
+    const urlParts = product.url.match(/\/product\/([^\/]+)\/?/);
+    const slug = urlParts ? urlParts[1] : '';
+
+    return {
+      params: { slug },
+      props: { product }
+    };
+  });
+}
+
+const { product } = Astro.props as { product: Product };
+const images = product.images ? product.images.split(',') : [];
+const tags = product.tags ? product.tags.split('|') : [];
+const displayTitle = product.optimized_title || product.title;
+const displayDescription = product.optimized_description || product.description;
+const referralTag = 'ref/16577150/?sharedfrom=pdp';
+const referralUrl = product.url.replace(/\/$/, '') + '/' + referralTag;
+---
+
+<Layout title={`${displayTitle} - Free Modern Creative Stuff`} description={displayDescription}>
+  <div class="container">
+    <div class="product-detail">
+      <div class="product-images">
+        {images.map((img, index) => (
+          <img src={img} alt={`${displayTitle} - Image ${index + 1}`} class="detail-image" />
+        ))}
+      </div>
+
+      <div class="product-info">
+        <nav class="breadcrumbs" set:html={product.breadcrumbs} />
+
+        <h1 class="detail-title">{displayTitle}</h1>
+
+        <div class="detail-description" set:html={displayDescription} />
+
+        <div class="detail-tags">
+          {tags.map((tag: string) => {
+            const [tagName] = tag.split('|');
+            return <span class="tag">{tagName}</span>;
+          })}
+        </div>
+
+        <a href={referralUrl} target="_blank" class="btn" style="display: inline-block; margin-top: 24px;">
+          Get it for free on Creative Fabrica
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .product-detail {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .product-detail {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .product-images {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .detail-image {
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .breadcrumbs {
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      color: #666;
+    }
+
+    .breadcrumbs :global(a) {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .breadcrumbs :global(li) {
+      display: inline;
+      list-style: none;
+    }
+
+    .breadcrumbs :global(li):not(:last-child)::after {
+      content: " / ";
+      margin: 0 8px;
+    }
+
+    .detail-title {
+      font-size: 2.5rem;
+      margin-bottom: 24px;
+      color: #333;
+    }
+
+    .detail-description {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #555;
+      margin-bottom: 24px;
+    }
+
+    .detail-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</Layout>
