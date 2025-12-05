@@ -1,22 +1,20 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getAllProducts, type Product } from '../../lib/db';
+import { turso, type Product } from '../../lib/db';
 
-export async function getStaticPaths() {
-  const products = await getAllProducts();
+const { slug } = Astro.params;
 
-  return products.map((product) => {
-    const urlParts = product.url.match(/\/product\/([^\/]+)\/?/);
-    const slug = urlParts ? urlParts[1] : '';
+// Find product by slug
+const result = await turso.execute({
+  sql: 'SELECT * FROM products WHERE url LIKE ?',
+  args: [`%/product/${slug}%`]
+});
 
-    return {
-      params: { slug },
-      props: { product }
-    };
-  });
+const product = result.rows[0] as unknown as Product;
+
+if (!product) {
+  return Astro.redirect('/404');
 }
-
-const { product } = Astro.props as { product: Product };
 const images = product.images ? product.images.split(',') : [];
 const tags = product.tags ? product.tags.split('|') : [];
 const displayTitle = product.optimized_title || product.title;
