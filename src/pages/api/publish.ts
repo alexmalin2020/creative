@@ -6,7 +6,7 @@ import { join } from 'path';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async () => {
   try {
     // Get random product from CSV
     const csvPath = join(process.cwd(), 'data.csv');
@@ -39,12 +39,8 @@ export const POST: APIRoute = async ({ request }) => {
     const localImages: string[] = [];
 
     for (let i = 0; i < product.imageUrls.length; i++) {
-      const imageUrl = product.imageUrls[i];
-      const githubRawUrl = `https://raw.githubusercontent.com/alexmalin2020/creative/main/images/${folderName}/${i}.jpg`;
       localImages.push(`/images/${folderName}/${i}.jpg`);
-
       // Note: Images should be already in public/images or downloaded separately
-      // For now, we'll store GitHub URLs as fallback
     }
 
     // Insert into database

@@ -1,11 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getAllProducts } from '../lib/db';
+import { getAllProducts, type Product } from '../lib/db';
 
 export const prerender = false;
 
-let products = [];
-let error = null;
+let products: Product[] = [];
+let error: string | null = null;
 
 try {
   products = await getAllProducts();
@@ -56,7 +56,7 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
               <h2 class="product-title">{displayTitle}</h2>
               <div class="product-description" set:html={displayDescription.substring(0, 150) + '...'} />
               <div class="product-tags">
-                {tags.map(tag => {
+                {tags.map((tag: string) => {
                   const [tagName] = tag.split('|');
                   return <span class="tag">{tagName}</span>;
                 })}

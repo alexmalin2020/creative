@@ -1,5 +1,4 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
 
 export interface CSVProduct {
   searchKey: string;
