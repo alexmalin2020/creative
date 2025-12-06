@@ -60,8 +60,8 @@ export const POST: APIRoute = async () => {
     // Parse categories from breadcrumbs
     const { category, subcategory } = parseCategoriesFromBreadcrumbs(product.breadcrumbs);
 
-    // Generate unique SEO-friendly slug from title
-    const baseSlug = generateProductSlug(product.title);
+    // Generate unique SEO-friendly slug from OPTIMIZED title (not short title from CSV)
+    const baseSlug = generateProductSlug(optimized.title);
     const uniqueSlug = await generateUniqueSlug(baseSlug);
 
     // Insert into database

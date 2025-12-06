@@ -30,8 +30,8 @@ export const GET: APIRoute = async () => {
       });
     }
 
-    // Get all products
-    const result = await turso.execute('SELECT id, title FROM products');
+    // Get all products with optimized titles
+    const result = await turso.execute('SELECT id, title, optimized_title, slug FROM products');
 
     let updated = 0;
     let skipped = 0;
@@ -39,32 +39,25 @@ export const GET: APIRoute = async () => {
     for (const row of result.rows) {
       const id = row.id as number;
       const title = row.title as string;
+      const optimizedTitle = row.optimized_title as string | null;
+      const currentSlug = row.slug as string | null;
 
-      if (!title) {
+      // Use optimized title if available, otherwise fall back to regular title
+      const titleForSlug = optimizedTitle || title;
+
+      if (!titleForSlug) {
         skipped++;
         continue;
       }
 
-      // Check if this product already has a slug
-      try {
-        const checkResult = await turso.execute({
-          sql: 'SELECT slug FROM products WHERE id = ?',
-          args: [id]
-        });
-
-        const currentSlug = checkResult.rows[0]?.slug as string | undefined;
-        if (currentSlug && currentSlug.length > 0) {
-          skipped++;
-          continue;
-        }
-      } catch (e) {
-        console.error(`Failed to check slug for product ${id}:`, e);
+      // Skip if product already has a valid slug
+      if (currentSlug && currentSlug.length > 0) {
         skipped++;
         continue;
       }
 
-      // Generate unique slug from title
-      const baseSlug = generateProductSlug(title);
+      // Generate unique slug from optimized title (or title if no optimized version)
+      const baseSlug = generateProductSlug(titleForSlug);
       let uniqueSlug: string;
 
       try {
