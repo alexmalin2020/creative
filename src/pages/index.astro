@@ -45,7 +45,7 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
       {products.map((product) => {
         const images = product.images ? product.images.split(',') : [];
         const firstImage = images[0] || 'https://via.placeholder.com/300x200?text=No+Image';
-        const tags = product.tags ? product.tags.split('|').slice(0, 3) : [];
+        const tags = product.tags ? product.tags.split(',').slice(0, 3) : [];
         const displayTitle = product.optimized_title || product.title;
         const displayDescription = product.optimized_description || product.description;
 
@@ -61,10 +61,9 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
                 <h2 class="product-title">{displayTitle}</h2>
                 <div class="product-description" set:html={displayDescription} />
               <div class="product-tags">
-                {tags.map((tag: string) => {
-                  const [tagName] = tag.split('|');
-                  return <span class="tag">{tagName}</span>;
-                })}
+                {tags.map((tag: string) => (
+                  <span class="tag">{tag.trim()}</span>
+                ))}
               </div>
               <button
                 class="btn get-free-btn"

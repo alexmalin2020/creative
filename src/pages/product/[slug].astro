@@ -16,7 +16,7 @@ if (!product) {
   return Astro.redirect('/404');
 }
 const images = product.images ? product.images.split(',') : [];
-const tags = product.tags ? product.tags.split('|') : [];
+const tags = product.tags ? product.tags.split(',') : [];
 const displayTitle = product.optimized_title || product.title;
 const displayDescription = product.optimized_description || product.description;
 const referralTag = 'ref/16577150/?sharedfrom=pdp';
@@ -40,10 +40,9 @@ const referralUrl = product.url.replace(/\/$/, '') + '/' + referralTag;
         <div class="detail-description" set:html={displayDescription} />
 
         <div class="detail-tags">
-          {tags.map((tag: string) => {
-            const [tagName] = tag.split('|');
-            return <span class="tag">{tagName}</span>;
-          })}
+          {tags.map((tag: string) => (
+            <span class="tag">{tag.trim()}</span>
+          ))}
         </div>
 
         <a href={referralUrl} target="_blank" class="btn" style="display: inline-block; margin-top: 24px;">
@@ -119,4 +118,18 @@ const referralUrl = product.url.replace(/\/$/, '') + '/' + referralTag;
       gap: 8px;
     }
   </style>
+
+  <script>
+    // Get it for free button functionality
+    document.querySelector('.get-free-btn')?.addEventListener('click', (e) => {
+      const button = e.target as HTMLButtonElement;
+      const url = button.getAttribute('data-url');
+      const referral = button.getAttribute('data-referral');
+
+      if (url && referral) {
+        const fullUrl = url.replace(/\/$/, '') + '/' + referral;
+        window.open(fullUrl, '_blank');
+      }
+    });
+  </script>
 </Layout>

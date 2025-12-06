@@ -23,7 +23,7 @@ export function parseCSVLine(line: string): CSVProduct | null {
     breadcrumbs: parts[3],
     productId: parseInt(parts[4], 10),
     description: parts[5],
-    tags: parts[6],
+    tags: parts[6].split(',').map(tag => tag.trim()).join(','), // Clean tags, use only comma
     imageUrls: parts[7]?.split(',').map(url => url.trim()) || []
   };
 }

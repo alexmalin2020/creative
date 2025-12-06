@@ -13,21 +13,36 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async () => {
   try {
-    // Get random product from CSV (GitHub)
-    const product = await getRandomProduct();
+    const MAX_ATTEMPTS = 10;
+    let attempts = 0;
+    let product = null;
 
-    if (!product) {
-      return new Response(JSON.stringify({ error: 'No products available in CSV' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Try to find an unpublished product
+    while (attempts < MAX_ATTEMPTS) {
+      product = await getRandomProduct();
+
+      if (!product) {
+        return new Response(JSON.stringify({ error: 'No products available in CSV' }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Check if product already exists
+      const existing = await getProductByUrl(product.url);
+      if (!existing) {
+        // Found unpublished product, break the loop
+        break;
+      }
+
+      // Product already published, try again
+      attempts++;
+      product = null;
     }
 
-    // Check if product already exists
-    const existing = await getProductByUrl(product.url);
-    if (existing) {
-      return new Response(JSON.stringify({ error: 'Product already published', product: existing }), {
-        status: 409,
+    if (!product) {
+      return new Response(JSON.stringify({ error: 'All products from CSV are already published' }), {
+        status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
