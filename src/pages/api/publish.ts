@@ -12,40 +12,86 @@ export const GET: APIRoute = async () => {
   });
 };
 
-export const POST: APIRoute = async () => {
+export const POST: APIRoute = async ({ request }) => {
   try {
-    const MAX_ATTEMPTS = 10;
-    let attempts = 0;
-    let product = null;
+    // Check if JSON data is provided in request body
+    let productData = null;
+    const contentType = request.headers.get('content-type');
 
-    // Try to find an unpublished product
-    while (attempts < MAX_ATTEMPTS) {
-      product = await getRandomProduct();
+    if (contentType?.includes('application/json')) {
+      try {
+        productData = await request.json();
+      } catch (e) {
+        // Invalid JSON, will fall back to CSV
+      }
+    }
+
+    // If JSON data provided, use it. Otherwise, get from CSV
+    let product;
+    let fromJSON = false;
+
+    if (productData && productData.title && productData.url) {
+      // Using JSON data from request
+      fromJSON = true;
+      product = {
+        searchKey: productData.search_key || productData.title.toLowerCase(),
+        url: productData.url,
+        title: productData.title,
+        breadcrumbs: productData.breadcrumbs || '',
+        productId: productData.product_id || Math.floor(Math.random() * 1000000),
+        description: productData.description || '',
+        tags: productData.tags || '',
+        imageUrls: Array.isArray(productData.images) ? productData.images : (productData.images || '').split(',')
+      };
+    } else {
+      // Get from CSV (existing logic)
+      const MAX_ATTEMPTS = 10;
+      let attempts = 0;
+      product = null;
+
+      // Try to find an unpublished product
+      while (attempts < MAX_ATTEMPTS) {
+        product = await getRandomProduct();
+
+        if (!product) {
+          return new Response(JSON.stringify({ error: 'No products available in CSV' }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        // Check if product already exists
+        const existing = await getProductByUrl(product.url);
+        if (!existing) {
+          // Found unpublished product, break the loop
+          break;
+        }
+
+        // Product already published, try again
+        attempts++;
+        product = null;
+      }
 
       if (!product) {
-        return new Response(JSON.stringify({ error: 'No products available in CSV' }), {
+        return new Response(JSON.stringify({ error: 'All products from CSV are already published' }), {
           status: 404,
           headers: { 'Content-Type': 'application/json' }
         });
       }
-
-      // Check if product already exists
-      const existing = await getProductByUrl(product.url);
-      if (!existing) {
-        // Found unpublished product, break the loop
-        break;
-      }
-
-      // Product already published, try again
-      attempts++;
-      product = null;
     }
 
-    if (!product) {
-      return new Response(JSON.stringify({ error: 'All products from CSV are already published' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Check if product already exists (for JSON input)
+    if (fromJSON) {
+      const existing = await getProductByUrl(product.url);
+      if (existing) {
+        return new Response(JSON.stringify({
+          error: 'Product already exists',
+          slug: existing.slug
+        }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     // Strip HTML tags from description for SEO optimization
@@ -54,9 +100,15 @@ export const POST: APIRoute = async () => {
     // Optimize SEO
     const optimized = await optimizeSEO(product.title, plainDescription);
 
-    // Get local image paths from GitHub
-    const folderName = getProductFolderName(product.url);
-    const localImages = await getProductImages(folderName);
+    // Get local image paths from GitHub (only for CSV products)
+    let localImages: string[] = [];
+    if (!fromJSON) {
+      const folderName = getProductFolderName(product.url);
+      localImages = await getProductImages(folderName);
+    } else {
+      // For JSON input, use provided images directly
+      localImages = product.imageUrls;
+    }
 
     // Parse categories from breadcrumbs
     const { category, subcategory } = parseCategoriesFromBreadcrumbs(product.breadcrumbs);
@@ -90,12 +142,17 @@ export const POST: APIRoute = async () => {
 
     return new Response(JSON.stringify({
       success: true,
+      source: fromJSON ? 'json' : 'csv',
       product: {
         title: product.title,
+        slug: uniqueSlug,
         optimized_title: optimized.title,
         optimized_description: optimized.description,
         url: product.url,
-        images: localImages
+        product_url: `https://creativestuff.vercel.app/product/${uniqueSlug}`,
+        images: localImages,
+        category: category || null,
+        subcategory: subcategory || null
       }
     }), {
       status: 200,
