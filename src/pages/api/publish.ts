@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getRandomProduct, getProductFolderName } from '../../lib/csv';
 import { optimizeSEO } from '../../lib/deepseek';
 import { insertProduct, getProductByUrl } from '../../lib/db';
+import { getProductImages } from '../../lib/images';
 
 export const GET: APIRoute = async () => {
   return new Response(JSON.stringify({ message: 'Use POST to publish a product' }), {
@@ -37,6 +38,10 @@ export const POST: APIRoute = async () => {
     // Optimize SEO
     const optimized = await optimizeSEO(product.title, plainDescription);
 
+    // Get local image paths from GitHub
+    const folderName = getProductFolderName(product.url);
+    const localImages = await getProductImages(folderName);
+
     // Insert into database
     await insertProduct({
       search_key: product.searchKey,
@@ -46,7 +51,7 @@ export const POST: APIRoute = async () => {
       product_id: product.productId,
       description: product.description,
       tags: product.tags,
-      images: product.imageUrls.join(','),
+      images: localImages.length > 0 ? localImages.join(',') : product.imageUrls.join(','),
       optimized_title: optimized.title,
       optimized_description: optimized.description
     });
@@ -58,7 +63,7 @@ export const POST: APIRoute = async () => {
         optimized_title: optimized.title,
         optimized_description: optimized.description,
         url: product.url,
-        images: product.imageUrls
+        images: localImages
       }
     }), {
       status: 200,
