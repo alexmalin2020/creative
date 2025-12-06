@@ -21,7 +21,7 @@ const referralUrl = product.url.replace(/\/$/, '') + '/' + referralTag;
 // Generate internal breadcrumbs
 const internalBreadcrumbs = generateInternalBreadcrumbs(product.category || null, product.subcategory || null);
 
-// Schema.org JSON-LD for SEO
+// Enhanced Schema.org JSON-LD for SEO & AI Search (GEO)
 const productSchema = {
   "@context": "https://schema.org",
   "@type": "Product",
@@ -29,22 +29,63 @@ const productSchema = {
   "description": displayDescription.replace(/<[^>]+>/g, ''), // Strip HTML
   "image": images,
   "url": `https://creativestuff.vercel.app/product/${slug}`,
+  "category": product.category || "Design Resources",
+  "keywords": tags.join(', '),
   "offers": {
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "USD",
     "availability": "https://schema.org/InStock",
-    "url": referralUrl
+    "url": referralUrl,
+    "priceValidUntil": "2026-12-31"
   },
   "brand": {
     "@type": "Brand",
-    "name": "Creative Fabrica"
+    "name": "Creative Fabrica",
+    "url": "https://www.creativefabrica.com"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Free Modern Creative Stuff",
+    "url": "https://creativestuff.vercel.app"
   }
+};
+
+// BreadcrumbList schema for navigation context (helps AI understand site structure)
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://creativestuff.vercel.app"
+    },
+    product.category && {
+      "@type": "ListItem",
+      "position": 2,
+      "name": product.category,
+      "item": `https://creativestuff.vercel.app/category/${product.category.toLowerCase().replace(/\s+/g, '-')}`
+    },
+    product.subcategory && {
+      "@type": "ListItem",
+      "position": 3,
+      "name": product.subcategory,
+      "item": `https://creativestuff.vercel.app/category/${product.category?.toLowerCase().replace(/\s+/g, '-')}/${product.subcategory.toLowerCase().replace(/\s+/g, '-')}`
+    },
+    {
+      "@type": "ListItem",
+      "position": product.subcategory ? 4 : (product.category ? 3 : 2),
+      "name": displayTitle
+    }
+  ].filter(Boolean)
 };
 ---
 
 <Layout title={`${displayTitle} - Free Modern Creative Stuff`} description={displayDescription}>
   <script type="application/ld+json" set:html={JSON.stringify(productSchema)} is:inline />
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
   <article class="container" itemscope itemtype="https://schema.org/Product">
     <div class="product-detail">
       <section class="product-images" aria-label="Product images">
