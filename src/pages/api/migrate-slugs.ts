@@ -7,16 +7,26 @@ export const GET: APIRoute = async () => {
     // First, ensure database schema is up to date
     await initDatabase();
 
-    // Get all products without slugs
-    const result = await turso.execute(
-      'SELECT id, title FROM products WHERE slug IS NULL'
-    );
+    // Get all products - we'll check for slugs in code
+    let result;
+    try {
+      // Try to get products without slugs
+      result = await turso.execute(
+        'SELECT id, title, slug FROM products WHERE slug IS NULL OR slug = ""'
+      );
+    } catch (e) {
+      // If slug column doesn't exist yet, get all products
+      result = await turso.execute('SELECT id, title FROM products');
+    }
 
     let updated = 0;
     for (const row of result.rows) {
       const id = row.id as number;
       const title = row.title as string;
+      const currentSlug = row.slug as string | undefined;
 
+      // Skip if already has slug
+      if (currentSlug && currentSlug.length > 0) continue;
       if (!title) continue;
 
       // Generate unique slug from title
