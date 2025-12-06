@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { turso, type Product } from '../../lib/db';
+import { generateInternalBreadcrumbs } from '../../lib/csv';
 
 const { slug } = Astro.params;
 
@@ -21,9 +22,34 @@ const displayTitle = product.optimized_title || product.title;
 const displayDescription = product.optimized_description || product.description;
 const referralTag = 'ref/16577150/?sharedfrom=pdp';
 const referralUrl = product.url.replace(/\/$/, '') + '/' + referralTag;
+
+// Generate internal breadcrumbs
+const internalBreadcrumbs = generateInternalBreadcrumbs(product.category || null, product.subcategory || null);
+
+// Schema.org JSON-LD for SEO
+const productSchema = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": displayTitle,
+  "description": displayDescription.replace(/<[^>]+>/g, ''), // Strip HTML
+  "image": images,
+  "url": `https://creativestuff.vercel.app/product/${slug}`,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock",
+    "url": referralUrl
+  },
+  "brand": {
+    "@type": "Brand",
+    "name": "Creative Fabrica"
+  }
+};
 ---
 
 <Layout title={`${displayTitle} - Free Modern Creative Stuff`} description={displayDescription}>
+  <script type="application/ld+json" set:html={JSON.stringify(productSchema)} />
   <div class="container">
     <div class="product-detail">
       <div class="product-images">
@@ -33,7 +59,7 @@ const referralUrl = product.url.replace(/\/$/, '') + '/' + referralTag;
       </div>
 
       <div class="product-info">
-        <nav class="breadcrumbs" set:html={product.breadcrumbs} />
+        <nav class="breadcrumbs" set:html={internalBreadcrumbs} />
 
         <h1 class="detail-title">{displayTitle}</h1>
 

@@ -177,6 +177,68 @@ const { title, description = "Discover free modern creative fonts, graphics, and
         font-size: 0.8rem;
         color: #666;
       }
+
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-top: 40px;
+        padding: 20px 0;
+      }
+
+      .pagination-btn {
+        padding: 10px 20px;
+        background: white;
+        color: #667eea;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.2s;
+      }
+
+      .pagination-btn:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      }
+
+      .pagination-numbers {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .pagination-number {
+        padding: 8px 14px;
+        background: white;
+        color: #333;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.2s;
+        min-width: 40px;
+        text-align: center;
+      }
+
+      .pagination-number:hover {
+        background: #f0f0f0;
+        transform: translateY(-1px);
+      }
+
+      .pagination-number.active {
+        background: #667eea;
+        color: white;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      .pagination-ellipsis {
+        padding: 8px 4px;
+        color: #999;
+      }
     </style>
   </head>
   <body>

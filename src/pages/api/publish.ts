@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getRandomProduct, getProductFolderName } from '../../lib/csv';
+import { getRandomProduct, getProductFolderName, parseCategoriesFromBreadcrumbs } from '../../lib/csv';
 import { optimizeSEO } from '../../lib/deepseek';
 import { insertProduct, getProductByUrl } from '../../lib/db';
 import { getProductImages } from '../../lib/images';
@@ -57,6 +57,9 @@ export const POST: APIRoute = async () => {
     const folderName = getProductFolderName(product.url);
     const localImages = await getProductImages(folderName);
 
+    // Parse categories from breadcrumbs
+    const { category, subcategory } = parseCategoriesFromBreadcrumbs(product.breadcrumbs);
+
     // Insert into database
     await insertProduct({
       search_key: product.searchKey,
@@ -67,6 +70,8 @@ export const POST: APIRoute = async () => {
       description: product.description,
       tags: product.tags,
       images: localImages.length > 0 ? localImages.join(',') : product.imageUrls.join(','),
+      category: category || undefined,
+      subcategory: subcategory || undefined,
       optimized_title: optimized.title,
       optimized_description: optimized.description
     });

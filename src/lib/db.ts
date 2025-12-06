@@ -15,6 +15,8 @@ export interface Product {
   description: string;
   tags: string;
   images: string;
+  category?: string;
+  subcategory?: string;
   published_at?: string;
   optimized_title?: string;
   optimized_description?: string;
@@ -32,11 +34,26 @@ export async function initDatabase() {
       description TEXT,
       tags TEXT,
       images TEXT,
+      category TEXT,
+      subcategory TEXT,
       published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       optimized_title TEXT,
       optimized_description TEXT
     )
   `);
+
+  // Add category and subcategory columns if they don't exist (migration)
+  try {
+    await turso.execute(`ALTER TABLE products ADD COLUMN category TEXT`);
+  } catch (e) {
+    // Column already exists, ignore error
+  }
+
+  try {
+    await turso.execute(`ALTER TABLE products ADD COLUMN subcategory TEXT`);
+  } catch (e) {
+    // Column already exists, ignore error
+  }
 
   await turso.execute(`
     CREATE INDEX IF NOT EXISTS idx_search_key ON products(search_key)
@@ -44,6 +61,14 @@ export async function initDatabase() {
 
   await turso.execute(`
     CREATE INDEX IF NOT EXISTS idx_published_at ON products(published_at DESC)
+  `);
+
+  await turso.execute(`
+    CREATE INDEX IF NOT EXISTS idx_category ON products(category)
+  `);
+
+  await turso.execute(`
+    CREATE INDEX IF NOT EXISTS idx_subcategory ON products(subcategory)
   `);
 }
 
@@ -63,8 +88,8 @@ export async function getProductByUrl(url: string): Promise<Product | null> {
 export async function insertProduct(product: Omit<Product, 'id' | 'published_at'>): Promise<void> {
   await turso.execute({
     sql: `INSERT INTO products
-      (search_key, url, title, breadcrumbs, product_id, description, tags, images, optimized_title, optimized_description)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (search_key, url, title, breadcrumbs, product_id, description, tags, images, category, subcategory, optimized_title, optimized_description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       product.search_key,
       product.url,
@@ -74,8 +99,44 @@ export async function insertProduct(product: Omit<Product, 'id' | 'published_at'
       product.description,
       product.tags,
       product.images,
+      product.category || null,
+      product.subcategory || null,
       product.optimized_title || product.title,
       product.optimized_description || product.description,
     ]
   });
+}
+
+export async function getProductsByCategory(category: string): Promise<Product[]> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM products WHERE category = ? ORDER BY published_at DESC',
+    args: [category]
+  });
+  return result.rows as unknown as Product[];
+}
+
+export async function getProductsBySubcategory(subcategory: string): Promise<Product[]> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM products WHERE subcategory = ? ORDER BY published_at DESC',
+    args: [subcategory]
+  });
+  return result.rows as unknown as Product[];
+}
+
+export async function getAllCategories(): Promise<string[]> {
+  const result = await turso.execute('SELECT DISTINCT category FROM products WHERE category IS NOT NULL ORDER BY category');
+  return result.rows.map((row: any) => row.category as string);
+}
+
+export async function getSubcategoriesByCategory(category: string): Promise<string[]> {
+  const result = await turso.execute({
+    sql: 'SELECT DISTINCT subcategory FROM products WHERE category = ? AND subcategory IS NOT NULL ORDER BY subcategory',
+    args: [category]
+  });
+  return result.rows.map((row: any) => row.subcategory as string);
+}
+
+export async function getAllSubcategories(): Promise<string[]> {
+  const result = await turso.execute('SELECT DISTINCT subcategory FROM products WHERE subcategory IS NOT NULL ORDER BY subcategory');
+  return result.rows.map((row: any) => row.subcategory as string);
 }

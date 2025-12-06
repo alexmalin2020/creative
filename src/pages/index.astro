@@ -4,15 +4,24 @@ import { getAllProducts, type Product } from '../lib/db';
 
 export const prerender = false;
 
-let products: Product[] = [];
+let allProducts: Product[] = [];
 let error: string | null = null;
 
 try {
-  products = await getAllProducts();
+  allProducts = await getAllProducts();
 } catch (e) {
   error = e instanceof Error ? e.message : 'Failed to load products';
   console.error('Error loading products:', e);
 }
+
+// Pagination
+const PRODUCTS_PER_PAGE = 20;
+const currentPage = parseInt(Astro.url.searchParams.get('page') || '1', 10);
+const totalProducts = allProducts.length;
+const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
+const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+const endIndex = startIndex + PRODUCTS_PER_PAGE;
+const products = allProducts.slice(startIndex, endIndex);
 
 const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 'ref/16577150/?sharedfrom=pdp';
 ---
@@ -78,6 +87,44 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
         );
       })}
     </div>
+
+    {totalPages > 1 && (
+      <div class="pagination">
+        {currentPage > 1 && (
+          <a href={`/?page=${currentPage - 1}`} class="pagination-btn">
+            ← Previous
+          </a>
+        )}
+
+        <div class="pagination-numbers">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+            if (
+              pageNum === 1 ||
+              pageNum === totalPages ||
+              (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
+            ) {
+              return (
+                <a
+                  href={`/?page=${pageNum}`}
+                  class={`pagination-number ${pageNum === currentPage ? 'active' : ''}`}
+                >
+                  {pageNum}
+                </a>
+              );
+            } else if (pageNum === currentPage - 3 || pageNum === currentPage + 3) {
+              return <span class="pagination-ellipsis">...</span>;
+            }
+            return null;
+          })}
+        </div>
+
+        {currentPage < totalPages && (
+          <a href={`/?page=${currentPage + 1}`} class="pagination-btn">
+            Next →
+          </a>
+        )}
+      </div>
+    )}
   </div>
 
   <script>

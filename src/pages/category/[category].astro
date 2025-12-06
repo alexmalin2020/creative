@@ -1,0 +1,211 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getAllCategories, getProductsByCategory, type Product } from '../../lib/db';
+import { slugify } from '../../lib/csv';
+
+const { category } = Astro.params;
+
+if (!category) {
+  return Astro.redirect('/404');
+}
+
+// Find the actual category name from the slug
+const allCategories = await getAllCategories();
+const categoryName = allCategories.find(cat => slugify(cat) === category);
+
+if (!categoryName) {
+  return Astro.redirect('/404');
+}
+
+// Get all products in this category
+const allProducts = await getProductsByCategory(categoryName);
+
+// Pagination
+const PRODUCTS_PER_PAGE = 20;
+const currentPage = parseInt(Astro.url.searchParams.get('page') || '1', 10);
+const totalProducts = allProducts.length;
+const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
+const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+const endIndex = startIndex + PRODUCTS_PER_PAGE;
+const products = allProducts.slice(startIndex, endIndex);
+
+let error: string | null = null;
+---
+
+<Layout title={`${categoryName} - Free Modern Creative Stuff`} description={`Browse free ${categoryName.toLowerCase()} resources from Creative Fabrica`}>
+  <div class="container">
+    <div class="breadcrumbs-wrapper">
+      <nav class="breadcrumbs">
+        <ul class="breadcrumbs">
+          <li><a href="/">Home</a></li>
+          <li>{categoryName}</li>
+        </ul>
+      </nav>
+    </div>
+
+    <h1 style="margin-top: 30px; margin-bottom: 20px;">{categoryName}</h1>
+
+    {error && <p class="error">{error}</p>}
+
+    <div class="product-grid">
+      {products.map((product: Product) => {
+        const images = product.images ? product.images.split(',') : [];
+        const firstImage = images[0] || '';
+        const tags = product.tags ? product.tags.split(',').slice(0, 3) : [];
+        const displayTitle = product.optimized_title || product.title;
+        const productSlug = product.url.match(/\/product\/([^\/]+)\//)?.[1] || '';
+
+        return (
+          <div class="product-card">
+            <a href={`/product/${productSlug}`} class="product-link">
+              <img src={firstImage} alt={displayTitle} class="product-image" />
+              <h2 class="product-title">{displayTitle}</h2>
+              <div class="product-tags">
+                {tags.map((tag: string) => (
+                  <span class="tag">{tag.trim()}</span>
+                ))}
+              </div>
+            </a>
+          </div>
+        );
+      })}
+    </div>
+
+    {totalPages > 1 && (
+      <div class="pagination">
+        {currentPage > 1 && (
+          <a href={`/category/${category}?page=${currentPage - 1}`} class="pagination-btn">
+            ← Previous
+          </a>
+        )}
+
+        <div class="pagination-numbers">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+            if (
+              pageNum === 1 ||
+              pageNum === totalPages ||
+              (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
+            ) {
+              return (
+                <a
+                  href={`/category/${category}?page=${pageNum}`}
+                  class={`pagination-number ${pageNum === currentPage ? 'active' : ''}`}
+                >
+                  {pageNum}
+                </a>
+              );
+            } else if (pageNum === currentPage - 3 || pageNum === currentPage + 3) {
+              return <span class="pagination-ellipsis">...</span>;
+            }
+            return null;
+          })}
+        </div>
+
+        {currentPage < totalPages && (
+          <a href={`/category/${category}?page=${currentPage + 1}`} class="pagination-btn">
+            Next →
+          </a>
+        )}
+      </div>
+    )}
+  </div>
+
+  <style>
+    .breadcrumbs-wrapper {
+      margin-top: 20px;
+    }
+
+    .breadcrumbs {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .breadcrumbs ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 8px;
+    }
+
+    .breadcrumbs li {
+      display: inline;
+    }
+
+    .breadcrumbs li:not(:last-child)::after {
+      content: " / ";
+      margin-left: 8px;
+    }
+
+    .breadcrumbs a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+      text-decoration: underline;
+    }
+
+    .error {
+      color: #e74c3c;
+      padding: 20px;
+      background: #fadbd8;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .product-link {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .product-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .product-title {
+      font-size: 1.1rem;
+      margin: 16px;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .product-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 16px 16px 16px;
+    }
+
+    .tag {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+    }
+  </style>
+</Layout>

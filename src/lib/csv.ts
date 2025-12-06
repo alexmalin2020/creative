@@ -60,3 +60,64 @@ export function getProductFolderName(url: string): string {
   const match = url.match(/\/product\/([^\/]+)\//);
   return match ? match[1] : '';
 }
+
+export function parseCategoriesFromBreadcrumbs(breadcrumbsHtml: string): { category: string | null, subcategory: string | null } {
+  try {
+    // Extract text content from breadcrumbs
+    // Example: <ul class="breadcrumbs"><li><a href="...">Home</a></li><li><a href="...">Fonts</a></li><li><a href="...">Decorative Fonts</a></li></ul>
+    const linkMatches = breadcrumbsHtml.match(/<a[^>]*>([^<]+)<\/a>/g);
+
+    if (!linkMatches || linkMatches.length < 2) {
+      return { category: null, subcategory: null };
+    }
+
+    // Extract text from links
+    const items = linkMatches
+      .map(link => {
+        const match = link.match(/>([^<]+)</);
+        return match ? match[1].trim() : '';
+      })
+      .filter(item => item && item.toLowerCase() !== 'home');
+
+    // First item after Home is category, second is subcategory
+    return {
+      category: items[0] || null,
+      subcategory: items[1] || null
+    };
+  } catch (error) {
+    console.error('Error parsing breadcrumbs:', error);
+    return { category: null, subcategory: null };
+  }
+}
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
+
+export function generateInternalBreadcrumbs(category: string | null, subcategory: string | null): string {
+  const breadcrumbs = ['<ul class="breadcrumbs">'];
+
+  // Home link
+  breadcrumbs.push('<li><a href="/">Home</a></li>');
+
+  // Category link
+  if (category) {
+    const categorySlug = slugify(category);
+    breadcrumbs.push(`<li><a href="/category/${categorySlug}">${category}</a></li>`);
+  }
+
+  // Subcategory link
+  if (subcategory && category) {
+    const categorySlug = slugify(category);
+    const subcategorySlug = slugify(subcategory);
+    breadcrumbs.push(`<li><a href="/category/${categorySlug}/${subcategorySlug}">${subcategory}</a></li>`);
+  }
+
+  breadcrumbs.push('</ul>');
+  return breadcrumbs.join('');
+}
