@@ -1,0 +1,41 @@
+User-agent: *
+Allow: /
+
+# Block resource-intensive crawlers to save server budget
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# Allow AI search engines (critical for GEO)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+# Block API endpoints from crawling
+User-agent: *
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://creativestuff.vercel.app/sitemap.xml

@@ -49,7 +49,14 @@ const productSchema = {
     <div class="product-detail">
       <div class="product-images">
         {images.map((img, index) => (
-          <img src={img} alt={`${displayTitle} - Image ${index + 1}`} class="detail-image" />
+          <img
+            src={img}
+            alt={`${displayTitle} - Image ${index + 1}`}
+            class="detail-image"
+            width="600"
+            height="400"
+            loading={index === 0 ? "eager" : "lazy"}
+          />
         ))}
       </div>
 

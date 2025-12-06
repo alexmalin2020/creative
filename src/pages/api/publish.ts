@@ -3,6 +3,7 @@ import { getRandomProduct, getProductFolderName, parseCategoriesFromBreadcrumbs,
 import { optimizeSEO } from '../../lib/deepseek';
 import { insertProduct, getProductByUrl, generateUniqueSlug } from '../../lib/db';
 import { getProductImages } from '../../lib/images';
+import { notifyProductIndexed } from '../../lib/indexnow';
 
 export const GET: APIRoute = async () => {
   return new Response(JSON.stringify({ message: 'Use POST to publish a product' }), {
@@ -80,6 +81,12 @@ export const POST: APIRoute = async () => {
       optimized_title: optimized.title,
       optimized_description: optimized.description
     });
+
+    // Notify IndexNow for instant indexing (Bing, Yandex)
+    // Fire and forget - don't wait for response
+    notifyProductIndexed(uniqueSlug).catch(err =>
+      console.error('IndexNow notification failed:', err)
+    );
 
     return new Response(JSON.stringify({
       success: true,

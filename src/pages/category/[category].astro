@@ -62,7 +62,14 @@ let error: string | null = null;
         return (
           <div class="product-card">
             <a href={`/product/${product.slug}`} class="product-link">
-              <img src={firstImage} alt={displayTitle} class="product-image" />
+              <img
+                src={firstImage}
+                alt={displayTitle}
+                class="product-image"
+                width="300"
+                height="200"
+                loading="lazy"
+              />
               <h2 class="product-title">{displayTitle}</h2>
               <div class="product-tags">
                 {tags.map((tag: string) => (

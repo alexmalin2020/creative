@@ -82,7 +82,14 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
         return (
           <div class="product-card" data-search={`${displayTitle} ${tags.join(' ')}`}>
             <a href={`/product/${product.slug}`} style="text-decoration: none; color: inherit;">
-              <img src={firstImage} alt={displayTitle} class="product-image" />
+              <img
+                src={firstImage}
+                alt={displayTitle}
+                class="product-image"
+                width="300"
+                height="200"
+                loading="lazy"
+              />
               <div class="product-content">
                 <h2 class="product-title">{displayTitle}</h2>
                 <div class="product-description" set:html={displayDescription} />
