@@ -36,30 +36,33 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
 
 <Layout title="Free Modern Creative Stuff - Fonts, Graphics & Design">
   <div class="container">
+    <h1 class="visually-hidden">Free Creative Fonts, Graphics & Design Resources</h1>
+
     {categories.length > 0 && (
-      <div class="categories-nav">
+      <aside class="categories-nav" aria-label="Product categories">
         <h2 style="font-size: 1.2rem; margin-bottom: 16px; color: #333;">Browse by Category</h2>
-        <div class="categories-list">
+        <nav class="categories-list" aria-label="Category links">
           {categories.map((cat) => (
             <a href={`/category/${slugify(cat)}`} class="category-badge">
               {cat}
             </a>
           ))}
-        </div>
-      </div>
+        </nav>
+      </aside>
     )}
 
-    <div class="search-filter">
+    <section class="search-filter" aria-label="Product search">
       <input
         type="text"
         id="searchInput"
         class="search-input"
         placeholder="Search for fonts, graphics, and designs..."
+        aria-label="Search products"
       />
-    </div>
+    </section>
 
     {error && (
-      <div style="background: #fee; padding: 20px; border-radius: 8px; color: #c00; margin-bottom: 20px;">
+      <div role="alert" style="background: #fee; padding: 20px; border-radius: 8px; color: #c00; margin-bottom: 20px;">
         Error: {error}
       </div>
     )}
@@ -71,7 +74,7 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
       </div>
     )}
 
-    <div class="product-grid" id="productGrid">
+    <section class="product-grid" id="productGrid" aria-label="Product listings">
       {products.map((product) => {
         const images = product.images ? product.images.split(',') : [];
         const firstImage = images[0] || 'https://via.placeholder.com/300x200?text=No+Image';
@@ -80,7 +83,7 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
         const displayDescription = product.optimized_description || product.description;
 
         return (
-          <div class="product-card" data-search={`${displayTitle} ${tags.join(' ')}`}>
+          <article class="product-card" data-search={`${displayTitle} ${tags.join(' ')}`}>
             <a href={`/product/${product.slug}`} style="text-decoration: none; color: inherit;">
               <img
                 src={firstImage}
@@ -107,10 +110,10 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
               </button>
             </div>
           </a>
-        </div>
+        </article>
         );
       })}
-    </div>
+    </section>
 
     {totalPages > 1 && (
       <div class="pagination">

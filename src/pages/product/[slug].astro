@@ -45,9 +45,9 @@ const productSchema = {
 
 <Layout title={`${displayTitle} - Free Modern Creative Stuff`} description={displayDescription}>
   <script type="application/ld+json" set:html={JSON.stringify(productSchema)} is:inline />
-  <div class="container">
+  <article class="container" itemscope itemtype="https://schema.org/Product">
     <div class="product-detail">
-      <div class="product-images">
+      <section class="product-images" aria-label="Product images">
         {images.map((img, index) => (
           <img
             src={img}
@@ -56,11 +56,12 @@ const productSchema = {
             width="600"
             height="400"
             loading={index === 0 ? "eager" : "lazy"}
+            itemprop="image"
           />
         ))}
-      </div>
+      </section>
 
-      <div class="product-info">
+      <section class="product-info">
         <nav class="breadcrumbs" set:html={internalBreadcrumbs} />
 
         <h1 class="detail-title">{displayTitle}</h1>
@@ -81,9 +82,9 @@ const productSchema = {
         >
           Get it for free
         </button>
-      </div>
+      </section>
     </div>
-  </div>
+  </article>
 
   <style>
     .product-detail {

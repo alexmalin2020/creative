@@ -52,7 +52,7 @@ let error: string | null = null;
 
     {error && <p class="error">{error}</p>}
 
-    <div class="product-grid">
+    <section class="product-grid" aria-label={`${categoryName} products`}>
       {products.map((product: Product) => {
         const images = product.images ? product.images.split(',') : [];
         const firstImage = images[0] || '';
@@ -60,7 +60,7 @@ let error: string | null = null;
         const displayTitle = product.optimized_title || product.title;
 
         return (
-          <div class="product-card">
+          <article class="product-card">
             <a href={`/product/${product.slug}`} class="product-link">
               <img
                 src={firstImage}
@@ -77,10 +77,10 @@ let error: string | null = null;
                 ))}
               </div>
             </a>
-          </div>
+          </article>
         );
       })}
-    </div>
+    </section>
 
     {totalPages > 1 && (
       <div class="pagination">
