@@ -1,9 +1,12 @@
 import type { APIRoute } from 'astro';
-import { turso } from '../../lib/db';
+import { turso, initDatabase } from '../../lib/db';
 import { parseCategoriesFromBreadcrumbs } from '../../lib/csv';
 
 export const GET: APIRoute = async () => {
   try {
+    // First, ensure database schema is up to date
+    await initDatabase();
+
     // Get all products without categories
     const result = await turso.execute(
       'SELECT id, breadcrumbs FROM products WHERE category IS NULL OR subcategory IS NULL'
