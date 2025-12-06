@@ -1,14 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getAllProducts, type Product } from '../lib/db';
+import { getAllProducts, getAllCategories, type Product } from '../lib/db';
+import { slugify } from '../lib/csv';
 
 export const prerender = false;
 
 let allProducts: Product[] = [];
+let categories: string[] = [];
 let error: string | null = null;
 
 try {
   allProducts = await getAllProducts();
+  categories = await getAllCategories();
 } catch (e) {
   error = e instanceof Error ? e.message : 'Failed to load products';
   console.error('Error loading products:', e);
@@ -33,6 +36,19 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
 
 <Layout title="Free Modern Creative Stuff - Fonts, Graphics & Design">
   <div class="container">
+    {categories.length > 0 && (
+      <div class="categories-nav">
+        <h2 style="font-size: 1.2rem; margin-bottom: 16px; color: #333;">Browse by Category</h2>
+        <div class="categories-list">
+          {categories.map((cat) => (
+            <a href={`/category/${slugify(cat)}`} class="category-badge">
+              {cat}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
     <div class="search-filter">
       <input
         type="text"
