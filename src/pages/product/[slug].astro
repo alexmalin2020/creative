@@ -49,7 +49,7 @@ const productSchema = {
 ---
 
 <Layout title={`${displayTitle} - Free Modern Creative Stuff`} description={displayDescription}>
-  <script type="application/ld+json" set:html={JSON.stringify(productSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(productSchema)} is:inline />
   <div class="container">
     <div class="product-detail">
       <div class="product-images">
@@ -71,9 +71,14 @@ const productSchema = {
           ))}
         </div>
 
-        <a href={referralUrl} target="_blank" class="btn" style="display: inline-block; margin-top: 24px;">
-          Get it for free on Creative Fabrica
-        </a>
+        <button
+          class="btn get-free-btn"
+          data-url={product.url}
+          data-referral={referralTag}
+          style="margin-top: 24px;"
+        >
+          Get it for free
+        </button>
       </div>
     </div>
   </div>

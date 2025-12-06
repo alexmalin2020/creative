@@ -81,19 +81,8 @@ let error: string | null = null;
 
         <div class="pagination-numbers">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
-            if (
-              pageNum === 1 ||
-              pageNum === totalPages ||
-              (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
-            ) {
-              return (
-                <a
-                  href={`/category/${category}?page=${pageNum}`}
-                  class={`pagination-number ${pageNum === currentPage ? 'active' : ''}`}
-                >
-                  {pageNum}
-                </a>
-              );
+            if (pageNum === 1 || pageNum === totalPages || (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)) {
+              return <a href={`/category/${category}?page=${pageNum}`} class={`pagination-number ${pageNum === currentPage ? 'active' : ''}`}>{pageNum}</a>;
             } else if (pageNum === currentPage - 3 || pageNum === currentPage + 3) {
               return <span class="pagination-ellipsis">...</span>;
             }
