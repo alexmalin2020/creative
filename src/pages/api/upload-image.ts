@@ -19,6 +19,7 @@ export const POST: APIRoute = async ({ request }) => {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const productFolder = formData.get('product_folder') as string || 'default';
+    const preserveFilename = formData.get('preserve_filename') === 'true';
 
     if (!file) {
       return new Response(JSON.stringify({
@@ -55,13 +56,20 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Sanitize filename
     const originalName = file.name;
-    const sanitizedName = originalName
-      .toLowerCase()
-      .replace(/[^a-z0-9.-]/g, '-')
-      .replace(/-+/g, '-');
 
-    const timestamp = Date.now();
-    const filename = `${timestamp}-${sanitizedName}`;
+    let filename: string;
+    if (preserveFilename) {
+      // Keep original filename as-is (only basic sanitization)
+      filename = originalName.replace(/[^a-zA-Z0-9._-]/g, '-');
+    } else {
+      // Add timestamp prefix (default behavior)
+      const sanitizedName = originalName
+        .toLowerCase()
+        .replace(/[^a-z0-9.-]/g, '-')
+        .replace(/-+/g, '-');
+      const timestamp = Date.now();
+      filename = `${timestamp}-${sanitizedName}`;
+    }
 
     // OPTION 1: Save to /tmp (temporary, for development/testing)
     // Note: Files in /tmp are deleted when serverless function ends
@@ -94,6 +102,7 @@ export const POST: APIRoute = async ({ request }) => {
       file: {
         original_name: originalName,
         saved_name: filename,
+        filename_preserved: preserveFilename,
         size: file.size,
         type: file.type,
         local_path: localPath,
@@ -129,11 +138,18 @@ export const GET: APIRoute = async () => {
       content_type: 'multipart/form-data',
       fields: {
         file: 'Image file (required)',
-        product_folder: 'Folder name for organization (optional, default: "default")'
+        product_folder: 'Folder name for organization (optional, default: "default")',
+        preserve_filename: 'Keep original filename without timestamp prefix (optional, "true" or "false", default: "false")'
       },
-      example_curl: `curl -X POST https://creativestuff.vercel.app/api/upload-image \\
+      examples: {
+        with_timestamp: `curl -X POST https://creativestuff.vercel.app/api/upload-image \\
   -F "file=@/path/to/image.jpg" \\
-  -F "product_folder=my-product"`
+  -F "product_folder=my-product"`,
+        preserve_original: `curl -X POST https://creativestuff.vercel.app/api/upload-image \\
+  -F "file=@/path/to/Nature_LOcom.jpg" \\
+  -F "product_folder=christmas-1171" \\
+  -F "preserve_filename=true"`
+      }
     }
   }), {
     status: 200,
