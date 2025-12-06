@@ -37,15 +37,6 @@ export const POST: APIRoute = async () => {
     // Optimize SEO
     const optimized = await optimizeSEO(product.title, plainDescription);
 
-    // Use GitHub raw URLs for images
-    const folderName = getProductFolderName(product.url);
-    const githubImages: string[] = [];
-
-    for (let i = 0; i < product.imageUrls.length; i++) {
-      const githubUrl = `https://raw.githubusercontent.com/alexmalin2020/creative/main/images/${folderName}/${i}.jpg`;
-      githubImages.push(githubUrl);
-    }
-
     // Insert into database
     await insertProduct({
       search_key: product.searchKey,
@@ -55,7 +46,7 @@ export const POST: APIRoute = async () => {
       product_id: product.productId,
       description: product.description,
       tags: product.tags,
-      images: githubImages.length > 0 ? githubImages.join(',') : product.imageUrls.join(','),
+      images: product.imageUrls.join(','),
       optimized_title: optimized.title,
       optimized_description: optimized.description
     });
@@ -67,7 +58,7 @@ export const POST: APIRoute = async () => {
         optimized_title: optimized.title,
         optimized_description: optimized.description,
         url: product.url,
-        images: githubImages
+        images: product.imageUrls
       }
     }), {
       status: 200,
