@@ -1,6 +1,108 @@
 # API Publishing Guide
 
-## Endpoint: POST /api/publish
+This guide covers two API endpoints for managing products:
+1. **POST /api/upload-image** - Upload product images
+2. **POST /api/publish** - Publish products (from CSV or JSON)
+
+---
+
+## Workflow: Publishing Product with Images
+
+1. **Upload images** using `/api/upload-image` → Get local paths
+2. **Publish product** using `/api/publish` with image paths from step 1
+
+---
+
+## Endpoint 1: POST /api/upload-image
+
+Upload product images to the server. Returns local paths to use in the publish endpoint.
+
+### Request Format
+
+**Method:** POST
+**Content-Type:** multipart/form-data
+
+**Form Fields:**
+- `file` (required) - Image file (JPG, PNG, GIF, WebP)
+- `product_folder` (optional) - Folder name for organization (default: "default")
+
+**Constraints:**
+- Maximum file size: 5MB
+- Allowed types: JPEG, JPG, PNG, GIF, WebP
+
+### Example: Upload with curl
+
+```bash
+curl -X POST https://creativestuff.vercel.app/api/upload-image \
+  -F "file=@/path/to/image.jpg" \
+  -F "product_folder=my-product"
+```
+
+### Example: Upload with JavaScript
+
+```javascript
+const formData = new FormData();
+formData.append('file', imageFile);
+formData.append('product_folder', 'vintage-script');
+
+const response = await fetch('https://creativestuff.vercel.app/api/upload-image', {
+  method: 'POST',
+  body: formData
+});
+
+const result = await response.json();
+console.log(result.file.local_path); // Use this in publish endpoint
+```
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "file": {
+    "original_name": "preview.jpg",
+    "saved_name": "1701234567890-preview.jpg",
+    "size": 245678,
+    "type": "image/jpeg",
+    "local_path": "/images/my-product/1701234567890-preview.jpg",
+    "temp_path": "/tmp/my-product/1701234567890-preview.jpg",
+    "note": "File saved to /tmp (temporary). For production, add this file to GitHub at /public/images/ or use Vercel Blob Storage."
+  },
+  "instructions": {
+    "manual_upload": "To make this image permanent, add it to your GitHub repo at: public/images/my-product/1701234567890-preview.jpg",
+    "vercel_blob": "For automatic cloud storage, install @vercel/blob and set BLOB_READ_WRITE_TOKEN env variable"
+  }
+}
+```
+
+### Error Responses
+
+**Invalid file type (400):**
+```json
+{
+  "error": "Invalid file type. Allowed: JPG, PNG, GIF, WebP",
+  "received": "image/bmp"
+}
+```
+
+**File too large (400):**
+```json
+{
+  "error": "File too large. Maximum size: 5MB",
+  "received": "7.23MB"
+}
+```
+
+**No file provided (400):**
+```json
+{
+  "error": "No file provided. Send file as form field named \"file\""
+}
+```
+
+---
+
+## Endpoint 2: POST /api/publish
 
 This endpoint allows publishing products in two ways:
 1. **From CSV** (no body) - randomly selects unpublished product from CSV
@@ -235,6 +337,92 @@ console.log(result);
 
 ---
 
+## Complete Workflow Example
+
+### Step 1: Upload Images
+
+```bash
+# Upload first image
+curl -X POST https://creativestuff.vercel.app/api/upload-image \
+  -F "file=@preview-1.jpg" \
+  -F "product_folder=geometric-font"
+
+# Response:
+# {
+#   "file": {
+#     "local_path": "/images/geometric-font/1701234567890-preview-1.jpg"
+#   }
+# }
+
+# Upload second image
+curl -X POST https://creativestuff.vercel.app/api/upload-image \
+  -F "file=@preview-2.jpg" \
+  -F "product_folder=geometric-font"
+
+# Response:
+# {
+#   "file": {
+#     "local_path": "/images/geometric-font/1701234567891-preview-2.jpg"
+#   }
+# }
+```
+
+### Step 2: Publish Product with Uploaded Images
+
+```bash
+curl -X POST https://creativestuff.vercel.app/api/publish \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Geometric Display Font",
+    "url": "https://www.creativefabrica.com/product/geometric-display-99999/",
+    "description": "<p>Bold geometric font for modern designs and posters</p>",
+    "tags": "geometric, display, bold, modern, poster",
+    "images": [
+      "/images/geometric-font/1701234567890-preview-1.jpg",
+      "/images/geometric-font/1701234567891-preview-2.jpg"
+    ],
+    "breadcrumbs": "<ul><li><a href=\"/\">Home</a></li><li><a href=\"/fonts\">Fonts</a></li><li><a href=\"/fonts/display\">Display Fonts</a></li></ul>"
+  }'
+
+# Response:
+# {
+#   "success": true,
+#   "source": "json",
+#   "product": {
+#     "slug": "geometric-display-font-bold-modern-typography",
+#     "product_url": "https://creativestuff.vercel.app/product/geometric-display-font-bold-modern-typography"
+#   }
+# }
+```
+
+### Step 3: Make Images Permanent (Production)
+
+**Option A: Manual GitHub Upload**
+```bash
+# Copy files from temporary location to your repo
+mkdir -p public/images/geometric-font
+cp /tmp/geometric-font/*.jpg public/images/geometric-font/
+
+# Commit and push
+git add public/images/geometric-font/
+git commit -m "Add images for geometric display font"
+git push
+```
+
+**Option B: Vercel Blob Storage (Automated)**
+```bash
+# Install Vercel Blob SDK
+npm install @vercel/blob
+
+# Set environment variable in Vercel dashboard
+# BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxx
+
+# Images will be automatically uploaded to Blob Storage
+# (requires uncommenting blob code in upload-image.ts)
+```
+
+---
+
 ## Notes
 
 - **SEO Optimization:** All products go through DeepSeek AI for title/description optimization
@@ -242,3 +430,5 @@ console.log(result);
 - **IndexNow:** Product indexed on Bing/Yandex within minutes
 - **Validation:** URL must be unique, duplicate URLs return 409 error
 - **Images:** Can mix local paths and external URLs in same array
+- **Temporary Storage:** Uploaded images in `/tmp` are deleted when serverless function ends
+- **Production Images:** Must be committed to GitHub or use Vercel Blob for persistence
