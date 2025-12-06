@@ -100,14 +100,28 @@ export function slugify(text: string): string {
 }
 
 export function generateProductSlug(title: string): string {
-  return title
+  const fullSlug = title
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '') // Remove all non-alphanumeric except spaces and hyphens
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
-    .substring(0, 100) // Limit to 100 characters for reasonable URL length
-    .replace(/-$/, ''); // Remove trailing hyphen if substring created one
+    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+
+  // If slug is already short enough, return it
+  const maxLength = 50; // SEO-friendly slug length
+  if (fullSlug.length <= maxLength) {
+    return fullSlug;
+  }
+
+  // Truncate to max 50 characters, breaking at word boundaries (hyphens)
+  const truncated = fullSlug.substring(0, maxLength);
+  const lastHyphen = truncated.lastIndexOf('-');
+
+  // If we found a hyphen, cut there to avoid breaking words. Otherwise use full truncated version
+  const result = lastHyphen > 0 ? truncated.substring(0, lastHyphen) : truncated;
+
+  // Remove trailing hyphen if any
+  return result.replace(/-$/, '');
 }
 
 export function generateInternalBreadcrumbs(category: string | null, subcategory: string | null): string {
