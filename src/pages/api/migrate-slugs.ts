@@ -7,44 +7,60 @@ export const GET: APIRoute = async () => {
     // First, ensure database schema is up to date
     await initDatabase();
 
-    // Get all products - we'll check for slugs in code
-    let result;
+    // Double-check: try to add slug column again in case it wasn't created
     try {
-      // Try to get products without slugs
-      result = await turso.execute(
-        'SELECT id, title, slug FROM products WHERE slug IS NULL OR slug = ""'
-      );
+      await turso.execute('ALTER TABLE products ADD COLUMN slug TEXT UNIQUE');
     } catch (e) {
-      // If slug column doesn't exist yet, get all products
-      result = await turso.execute('SELECT id, title FROM products');
+      // Column already exists or other error, continue
     }
 
+    // Get all products
+    const result = await turso.execute('SELECT id, title FROM products');
+
     let updated = 0;
+    let skipped = 0;
+
     for (const row of result.rows) {
       const id = row.id as number;
       const title = row.title as string;
-      const currentSlug = row.slug as string | undefined;
 
-      // Skip if already has slug
-      if (currentSlug && currentSlug.length > 0) continue;
-      if (!title) continue;
+      if (!title) {
+        skipped++;
+        continue;
+      }
+
+      // Check if this product already has a slug
+      const checkResult = await turso.execute({
+        sql: 'SELECT slug FROM products WHERE id = ?',
+        args: [id]
+      });
+
+      const currentSlug = checkResult.rows[0]?.slug as string | undefined;
+      if (currentSlug && currentSlug.length > 0) {
+        skipped++;
+        continue;
+      }
 
       // Generate unique slug from title
       const baseSlug = generateProductSlug(title);
       const uniqueSlug = await generateUniqueSlug(baseSlug);
 
       // Update product with slug
-      await turso.execute({
-        sql: 'UPDATE products SET slug = ? WHERE id = ?',
-        args: [uniqueSlug, id]
-      });
-
-      updated++;
+      try {
+        await turso.execute({
+          sql: 'UPDATE products SET slug = ? WHERE id = ?',
+          args: [uniqueSlug, id]
+        });
+        updated++;
+      } catch (e) {
+        console.error(`Failed to update product ${id}:`, e);
+        skipped++;
+      }
     }
 
     return new Response(JSON.stringify({
       success: true,
-      message: `Updated ${updated} products with SEO-friendly slugs`
+      message: `Updated ${updated} products with SEO-friendly slugs (${skipped} skipped)`
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
