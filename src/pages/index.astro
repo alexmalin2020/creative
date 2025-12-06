@@ -38,19 +38,6 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
   <div class="container">
     <h1 class="visually-hidden">Free Creative Fonts, Graphics & Design Resources</h1>
 
-    {categories.length > 0 && (
-      <aside class="categories-nav" aria-label="Product categories">
-        <h2 style="font-size: 1.2rem; margin-bottom: 16px; color: #333;">Browse by Category</h2>
-        <nav class="categories-list" aria-label="Category links">
-          {categories.map((cat) => (
-            <a href={`/category/${slugify(cat)}`} class="category-badge">
-              {cat}
-            </a>
-          ))}
-        </nav>
-      </aside>
-    )}
-
     <section class="search-filter" aria-label="Product search">
       <input
         type="text"
@@ -141,6 +128,19 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
           </a>
         )}
       </div>
+    )}
+
+    {categories.length > 0 && (
+      <aside class="categories-nav" aria-label="Product categories" style="margin-top: 40px;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 16px; color: #333;">Browse by Category</h2>
+        <nav class="categories-list" aria-label="Category links">
+          {categories.map((cat) => (
+            <a href={`/category/${slugify(cat)}`} class="category-badge">
+              {cat}
+            </a>
+          ))}
+        </nav>
+      </aside>
     )}
   </div>
 
