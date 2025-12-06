@@ -12,6 +12,7 @@
   "dependencies": {
     "@astrojs/vercel": "^8.1.0",
     "@libsql/client": "^0.15.0",
+    "@vercel/blob": "^2.0.0",
     "astro": "^5.1.4"
   },
   "devDependencies": {

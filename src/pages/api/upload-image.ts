@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { put } from '@vercel/blob';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -71,31 +70,10 @@ export const POST: APIRoute = async ({ request }) => {
       filename = `${timestamp}-${sanitizedName}`;
     }
 
-    // OPTION 1: Save to /tmp (temporary, for development/testing)
-    // Note: Files in /tmp are deleted when serverless function ends
-    const tmpPath = join('/tmp', productFolder);
-    const tmpFilePath = join(tmpPath, filename);
-
-    // Create directory if not exists
-    try {
-      await writeFile(tmpFilePath, Buffer.from(await file.arrayBuffer()));
-    } catch (err) {
-      // Try without creating directory
-      await writeFile(join('/tmp', filename), Buffer.from(await file.arrayBuffer()));
-    }
-
-    // OPTION 2: Use Vercel Blob Storage (recommended for production)
-    // Uncomment if you have @vercel/blob installed and BLOB_READ_WRITE_TOKEN env var:
-    /*
-    import { put } from '@vercel/blob';
+    // Upload to Vercel Blob Storage
     const blob = await put(`images/${productFolder}/${filename}`, file, {
       access: 'public',
     });
-    const publicUrl = blob.url;
-    */
-
-    // For now, return local path (user should commit to GitHub for production)
-    const localPath = `/images/${productFolder}/${filename}`;
 
     return new Response(JSON.stringify({
       success: true,
@@ -105,13 +83,10 @@ export const POST: APIRoute = async ({ request }) => {
         filename_preserved: preserveFilename,
         size: file.size,
         type: file.type,
-        local_path: localPath,
-        temp_path: tmpFilePath,
-        note: 'File saved to /tmp (temporary). For production, add this file to GitHub at /public/images/ or use Vercel Blob Storage.'
-      },
-      instructions: {
-        manual_upload: `To make this image permanent, add it to your GitHub repo at: public/images/${productFolder}/${filename}`,
-        vercel_blob: 'For automatic cloud storage, install @vercel/blob and set BLOB_READ_WRITE_TOKEN env variable'
+        url: blob.url,
+        pathname: blob.pathname,
+        download_url: blob.downloadUrl,
+        content_type: blob.contentType
       }
     }), {
       status: 200,
