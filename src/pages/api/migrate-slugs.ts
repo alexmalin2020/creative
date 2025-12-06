@@ -7,17 +7,27 @@ export const GET: APIRoute = async () => {
     // First, ensure database schema is up to date
     await initDatabase();
 
-    // Force add slug column - try multiple times to ensure it's created
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        await turso.execute('ALTER TABLE products ADD COLUMN slug TEXT');
-        break; // Success, exit loop
-      } catch (e) {
-        // Column might already exist or other error
-        if (attempt === 2) {
-          console.log('Column slug should exist now or already exists');
-        }
-      }
+    // Wait a moment for schema changes to propagate (Turso replication)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Check if slug column exists by querying schema
+    let hasSlugColumn = false;
+    try {
+      const schemaCheck = await turso.execute(`PRAGMA table_info(products)`);
+      hasSlugColumn = schemaCheck.rows.some(row => row.name === 'slug');
+    } catch (e) {
+      console.error('Failed to check schema:', e);
+    }
+
+    if (!hasSlugColumn) {
+      return new Response(JSON.stringify({
+        error: 'Slug column does not exist',
+        details: 'Database schema is not up to date. Please run /api/init-db first.',
+        suggestion: 'Visit /api/check-schema to verify the schema'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     // Get all products
@@ -25,7 +35,6 @@ export const GET: APIRoute = async () => {
 
     let updated = 0;
     let skipped = 0;
-    let slugColumnExists = true;
 
     for (const row of result.rows) {
       const id = row.id as number;
@@ -36,40 +45,35 @@ export const GET: APIRoute = async () => {
         continue;
       }
 
-      // Check if this product already has a slug (only if column exists)
-      if (slugColumnExists) {
-        try {
-          const checkResult = await turso.execute({
-            sql: 'SELECT slug FROM products WHERE id = ?',
-            args: [id]
-          });
+      // Check if this product already has a slug
+      try {
+        const checkResult = await turso.execute({
+          sql: 'SELECT slug FROM products WHERE id = ?',
+          args: [id]
+        });
 
-          const currentSlug = checkResult.rows[0]?.slug as string | undefined;
-          if (currentSlug && currentSlug.length > 0) {
-            skipped++;
-            continue;
-          }
-        } catch (e) {
-          // Column doesn't exist yet, mark it and continue without checking
-          slugColumnExists = false;
+        const currentSlug = checkResult.rows[0]?.slug as string | undefined;
+        if (currentSlug && currentSlug.length > 0) {
+          skipped++;
+          continue;
         }
+      } catch (e) {
+        console.error(`Failed to check slug for product ${id}:`, e);
+        skipped++;
+        continue;
       }
 
       // Generate unique slug from title
       const baseSlug = generateProductSlug(title);
+      let uniqueSlug: string;
 
-      // For unique slug generation, use a simpler approach if column doesn't exist
-      let uniqueSlug = baseSlug;
-      if (slugColumnExists) {
-        try {
-          uniqueSlug = await generateUniqueSlug(baseSlug);
-        } catch (e) {
-          // If this fails, use base slug with timestamp
-          uniqueSlug = `${baseSlug}-${Date.now()}`;
-        }
-      } else {
-        // Without column, just append timestamp to ensure uniqueness
+      try {
+        uniqueSlug = await generateUniqueSlug(baseSlug);
+      } catch (e) {
+        // If unique slug generation fails, use base slug with timestamp
+        console.warn(`Failed to generate unique slug for "${title}", using timestamp fallback`);
         uniqueSlug = `${baseSlug}-${Date.now()}-${id}`;
+        await new Promise(resolve => setTimeout(resolve, 2)); // Small delay for uniqueness
       }
 
       // Update product with slug
@@ -79,13 +83,8 @@ export const GET: APIRoute = async () => {
           args: [uniqueSlug, id]
         });
         updated++;
-
-        // Small delay to ensure uniqueness if using timestamps
-        if (!slugColumnExists) {
-          await new Promise(resolve => setTimeout(resolve, 1));
-        }
       } catch (e) {
-        console.error(`Failed to update product ${id}:`, e);
+        console.error(`Failed to update product ${id} with slug "${uniqueSlug}":`, e);
         skipped++;
       }
     }
