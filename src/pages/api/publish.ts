@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { getRandomProduct, getProductFolderName, parseCategoriesFromBreadcrumbs } from '../../lib/csv';
+import { getRandomProduct, getProductFolderName, parseCategoriesFromBreadcrumbs, generateProductSlug } from '../../lib/csv';
 import { optimizeSEO } from '../../lib/deepseek';
-import { insertProduct, getProductByUrl } from '../../lib/db';
+import { insertProduct, getProductByUrl, generateUniqueSlug } from '../../lib/db';
 import { getProductImages } from '../../lib/images';
 
 export const GET: APIRoute = async () => {
@@ -60,11 +60,16 @@ export const POST: APIRoute = async () => {
     // Parse categories from breadcrumbs
     const { category, subcategory } = parseCategoriesFromBreadcrumbs(product.breadcrumbs);
 
+    // Generate unique SEO-friendly slug from title
+    const baseSlug = generateProductSlug(product.title);
+    const uniqueSlug = await generateUniqueSlug(baseSlug);
+
     // Insert into database
     await insertProduct({
       search_key: product.searchKey,
       url: product.url,
       title: product.title,
+      slug: uniqueSlug,
       breadcrumbs: product.breadcrumbs,
       product_id: product.productId,
       description: product.description,

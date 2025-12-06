@@ -1,17 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { turso, type Product } from '../../lib/db';
+import { getProductBySlug, type Product } from '../../lib/db';
 import { generateInternalBreadcrumbs } from '../../lib/csv';
 
 const { slug } = Astro.params;
 
 // Find product by slug
-const result = await turso.execute({
-  sql: 'SELECT * FROM products WHERE url LIKE ?',
-  args: [`%/product/${slug}%`]
-});
-
-const product = result.rows[0] as unknown as Product;
+const product = await getProductBySlug(slug || '');
 
 if (!product) {
   return Astro.redirect('/404');

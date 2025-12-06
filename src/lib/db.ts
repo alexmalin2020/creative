@@ -10,6 +10,7 @@ export interface Product {
   search_key: string;
   url: string;
   title: string;
+  slug?: string;
   breadcrumbs: string;
   product_id: number;
   description: string;
@@ -29,6 +30,7 @@ export async function initDatabase() {
       search_key TEXT NOT NULL,
       url TEXT NOT NULL UNIQUE,
       title TEXT NOT NULL,
+      slug TEXT UNIQUE,
       breadcrumbs TEXT,
       product_id INTEGER,
       description TEXT,
@@ -55,6 +57,12 @@ export async function initDatabase() {
     // Column already exists, ignore error
   }
 
+  try {
+    await turso.execute(`ALTER TABLE products ADD COLUMN slug TEXT UNIQUE`);
+  } catch (e) {
+    // Column already exists, ignore error
+  }
+
   await turso.execute(`
     CREATE INDEX IF NOT EXISTS idx_search_key ON products(search_key)
   `);
@@ -69,6 +77,10 @@ export async function initDatabase() {
 
   await turso.execute(`
     CREATE INDEX IF NOT EXISTS idx_subcategory ON products(subcategory)
+  `);
+
+  await turso.execute(`
+    CREATE INDEX IF NOT EXISTS idx_slug ON products(slug)
   `);
 }
 
@@ -85,15 +97,38 @@ export async function getProductByUrl(url: string): Promise<Product | null> {
   return result.rows[0] as unknown as Product || null;
 }
 
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM products WHERE slug = ?',
+    args: [slug]
+  });
+  return result.rows[0] as unknown as Product || null;
+}
+
+export async function generateUniqueSlug(baseSlug: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await getProductBySlug(slug);
+    if (!existing) {
+      return slug;
+    }
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 export async function insertProduct(product: Omit<Product, 'id' | 'published_at'>): Promise<void> {
   await turso.execute({
     sql: `INSERT INTO products
-      (search_key, url, title, breadcrumbs, product_id, description, tags, images, category, subcategory, optimized_title, optimized_description)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (search_key, url, title, slug, breadcrumbs, product_id, description, tags, images, category, subcategory, optimized_title, optimized_description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       product.search_key,
       product.url,
       product.title,
+      product.slug || null,
       product.breadcrumbs,
       product.product_id,
       product.description,

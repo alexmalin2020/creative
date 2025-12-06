@@ -99,6 +99,17 @@ export function slugify(text: string): string {
     .trim();
 }
 
+export function generateProductSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove all non-alphanumeric except spaces and hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+    .substring(0, 100) // Limit to 100 characters for reasonable URL length
+    .replace(/-$/, ''); // Remove trailing hyphen if substring created one
+}
+
 export function generateInternalBreadcrumbs(category: string | null, subcategory: string | null): string {
   const breadcrumbs = ['<ul class="breadcrumbs">'];
 

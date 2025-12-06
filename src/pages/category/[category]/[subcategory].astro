@@ -62,11 +62,10 @@ let error: string | null = null;
         const firstImage = images[0] || '';
         const tags = product.tags ? product.tags.split(',').slice(0, 3) : [];
         const displayTitle = product.optimized_title || product.title;
-        const productSlug = product.url.match(/\/product\/([^\/]+)\//)?.[1] || '';
 
         return (
           <div class="product-card">
-            <a href={`/product/${productSlug}`} class="product-link">
+            <a href={`/product/${product.slug}`} class="product-link">
               <img src={firstImage} alt={displayTitle} class="product-image" />
               <h2 class="product-title">{displayTitle}</h2>
               <div class="product-tags">

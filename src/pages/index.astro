@@ -79,13 +79,9 @@ const referralTag = import.meta.env.REFERRAL_TAG || process.env.REFERRAL_TAG || 
         const displayTitle = product.optimized_title || product.title;
         const displayDescription = product.optimized_description || product.description;
 
-        // Create slug from URL for product page
-        const urlParts = product.url.match(/\/product\/([^\/]+)\/?/);
-        const slug = urlParts ? urlParts[1] : '';
-
         return (
           <div class="product-card" data-search={`${displayTitle} ${tags.join(' ')}`}>
-            <a href={`/product/${slug}`} style="text-decoration: none; color: inherit;">
+            <a href={`/product/${product.slug}`} style="text-decoration: none; color: inherit;">
               <img src={firstImage} alt={displayTitle} class="product-image" />
               <div class="product-content">
                 <h2 class="product-title">{displayTitle}</h2>
